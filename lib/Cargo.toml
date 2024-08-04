@@ -6,7 +6,7 @@ edition = "2021"
 
 [dependencies]
 anchor-lang = { git = "https://github.com/coral-xyz/anchor.git", rev = "4853cd1da7c81239dd261d943d165095c220d79f" }
-solana-program = "2.0.4"
+solana-program = "2.0.2"
 spl-token = { version = "6.0.0", features = ["no-entrypoint"] }
 spl-associated-token-account = { version = "4.0.0", features = ["no-entrypoint"] }
 thiserror = "1.0.63"
