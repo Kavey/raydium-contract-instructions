@@ -105,20 +105,24 @@ impl StakePoolInstruction {
             Self::Initialize(init) => {
                 output[0] = 0;
                 #[allow(clippy::cast_ptr_alignment)]
-                let value = unsafe { &mut *(&mut output[1] as *mut u8 as *mut InitArgs) };
-                *value = *init;
+                let value = { &mut output[1] as *mut u8 as *mut InitArgs };
+                unsafe {
+                    std::ptr::copy_nonoverlapping(init, value, 1);
+                }
             }
             Self::Deposit(val) => {
                 output[0] = 1;
                 #[allow(clippy::cast_ptr_alignment)]
-                let value = unsafe { &mut *(&mut output[1] as *mut u8 as *mut u64) };
-                *value = *val;
+                {
+                    output[1..1 + size_of::<u64>()].copy_from_slice(&val.to_le_bytes());
+                }
             }
             Self::Withdraw(val) => {
                 output[0] = 2;
                 #[allow(clippy::cast_ptr_alignment)]
-                let value = unsafe { &mut *(&mut output[1] as *mut u8 as *mut u64) };
-                *value = *val;
+                {
+                    output[1..1 + size_of::<u64>()].copy_from_slice(&val.to_le_bytes());
+                }
             }
             Self::UpdatePool => {
                 output[0] = 3;
@@ -133,13 +137,13 @@ impl StakePoolInstruction {
             }
             Self::DepositV2(val) => {
                 output[0] = 10;
-                let value = unsafe { &mut *(&mut output[1] as *mut u8 as *mut u64) };
-                *value = *val;
+                let bytes = val.to_le_bytes();
+                output[1..1 + size_of::<u64>()].copy_from_slice(&bytes);
             }
             Self::WithdrawV2(val) => {
                 output[0] = 11;
-                let value = unsafe { &mut *(&mut output[1] as *mut u8 as *mut u64) };
-                *value = *val;
+                let bytes = val.to_le_bytes();
+                output[1..1 + size_of::<u64>()].copy_from_slice(&bytes);
             }
 
             _ => return Err(ProgramError::InvalidAccountData),

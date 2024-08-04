@@ -110,20 +110,27 @@ impl FarmPoolInstruction {
             Self::Initialize(init) => {
                 output[0] = 0;
                 #[allow(clippy::cast_ptr_alignment)]
-                let value = unsafe { &mut *(&mut output[1] as *mut u8 as *mut InitArgs) };
-                *value = *init;
+                let init_bytes = unsafe {
+                    std::slice::from_raw_parts(
+                        (init as *const InitArgs) as *const u8,
+                        size_of::<InitArgs>(),
+                    )
+                };
+                output[1..1 + size_of::<InitArgs>()].copy_from_slice(init_bytes);
             }
             Self::Deposit(val) => {
                 output[0] = 1;
                 #[allow(clippy::cast_ptr_alignment)]
-                let value = unsafe { &mut *(&mut output[1] as *mut u8 as *mut u64) };
-                *value = *val;
+                unsafe {
+                    std::ptr::write_unaligned(output[1..].as_mut_ptr() as *mut u64, *val);
+                }
             }
             Self::Withdraw(val) => {
                 output[0] = 2;
                 #[allow(clippy::cast_ptr_alignment)]
-                let value = unsafe { &mut *(&mut output[1] as *mut u8 as *mut u64) };
-                *value = *val;
+                unsafe {
+                    std::ptr::write_unaligned(output[1..].as_mut_ptr() as *mut u64, *val);
+                }
             }
             Self::UpdatePool => {
                 output[0] = 3;
@@ -138,13 +145,14 @@ impl FarmPoolInstruction {
             }
             Self::DepositV2(val) => {
                 output[0] = 11;
-                let value = unsafe { &mut *(&mut output[1] as *mut u8 as *mut u64) };
-                *value = *val;
+                output[1..1 + size_of::<u64>()].copy_from_slice(&val.to_le_bytes());
             }
             Self::WithdrawV2(val) => {
                 output[0] = 12;
-                let value = unsafe { &mut *(&mut output[1] as *mut u8 as *mut u64) };
-                *value = *val;
+                #[allow(clippy::cast_ptr_alignment)]
+                unsafe {
+                    std::ptr::write_unaligned(output[1..].as_mut_ptr() as *mut u64, *val);
+                }
             }
 
             _ => return Err(ProgramError::InvalidAccountData),
